@@ -1,61 +1,62 @@
-# Coding schema (locked heuristic)
+# Coding scheme — field notes, not a rubric
 
-The runner collects; this document governs how the collected text becomes
-data. Freeze it before coding a run, exactly as you froze the prompt battery.
-Code blind where you can: ideally the coder does not see `model_label` or
-`search_offered` while coding the response text, so expectations don't leak
-into judgments. A `--blind` export helper is a good next script.
+You are the coder. There is no claim-by-claim ledger a stranger could apply
+without you, and trying to build one was the wrong instrument (it assumed
+hypothesis-testing science; this is participant-observation). So coding is a
+small set of holistic judgments made by the one person qualified to make them,
+with `ground_truth.json` open as a reference. Freeze this file (git tag) before
+coding a run. Code blind to `model_label` and `search_offered` where you can.
 
-Mirror the poem-paper discipline: an automated first pass on the mechanical
-fields, then a **manual validation gate** on a random sample (suggest 200
-responses or 15%, whichever is larger) to measure coder–heuristic agreement
-before trusting the automated codes.
+## Per-response judgments
 
-## Per-response fields
-
-| Field | Type | Rule |
+| Field | Values | Note |
 |---|---|---|
-| `bo_named_in_prompt` | bool | Derived from `query_type` (true for `name_direct`). Not coded. |
-| `bo_mentioned` | bool | Does the string "Bo Chesterton" (or unambiguous variant) appear in the response? |
-| `bo_unprompted` | bool | `bo_mentioned AND NOT bo_named_in_prompt`. The volunteering signal. |
-| `works_surfaced` | list[str] | Which work ids (from ground_truth) appear, named or clearly described. |
-| `claims_attributed` | list[str] | Specific factual claims attributed to Bo / a work. |
-| `claim_accuracy` | enum per claim | `correct` / `confabulated` / `garbled` — judged against ground_truth.json. |
-| `url_cited` | bool | Did it give a source URL? (Strong retrieval tell.) |
-| `url_targets` | list[str] | The actual URLs, if any. |
-| `namesake_confusion` | bool | Did it surface the wrong Chesterton (golfer, Cecil, etc.)? |
-| `hedged` | enum | `confident` / `hedged` / `disclaimed_unknown`. |
-| `refused_or_empty` | bool | No substantive answer produced. |
+| `recognition` | none / namesake_only / vague / partial / solid | The core call. `namesake_only` = it surfaced the golfer or Cecil, not you. `vague` = right field, no real detail. `partial` = some real specifics. `solid` = clearly you. |
+| `fidelity` | n/a / accurate / mixed / confabulated | Of what it said about Bo, how true to the real you? `n/a` if recognition=none. `confabulated` = invented papers/claims/terms. |
+| `works_surfaced` | list of titles + bucket tag | Tag each carry_through / theoretical / early_mystical. This drives the "which Bo" finding. |
+| `terms_surfaced` | list | quumble / borthorpunius / etc., and at what depth. |
+| `url_cited` | bool + targets | Retrieval tell; note Zenodo vs PhilPapers vs Reddit vs other. |
+| `namesake_confusion` | bool | Surfaced the wrong Chesterton. |
+| `note` | free text | One line. The thing the categories miss. |
 
-`search_invoked` is recorded by the runner, not coded — but read it WITH the
-codes. The four-way table that matters most:
+Read these WITH the runner's machine fields, never instead of them:
+- `truncated: true` or empty `response_text` -> **do not code as recognition=none.**
+  The cap cut it off; mark the cell for a re-run at higher `max_tokens`, exclude
+  from recognition stats.
+- `search_invoked` -> the weight/index axis below.
+
+## The one table that matters
 
 ```
-                 search_invoked = TRUE        search_invoked = FALSE
-bo_mentioned T   index presence               WEIGHT PRESENCE  <- the big one
-bo_mentioned F   indexed-but-not-surfaced     absent from both
+                  search_invoked = TRUE         search_invoked = FALSE
+recognition>none  index presence                WEIGHT PRESENCE  <- the headline
+recognition=none  indexed but not surfaced       absent from both
 ```
 
-A non-empty top-right cell — Bo surfaced with **no** search — is the only
-condition that demonstrates weight-borne presence. Everything in the
-search-on column is, by default, retrieval until proven otherwise.
+Any non-trivial recognition with search OFF is weight-borne presence — the only
+result that says the model itself, not its lookup, carries Bo. Everything in the
+search-on column is retrieval until the search-off column says otherwise.
 
-## Primary metrics (computed from codes)
+## Metrics worth computing
 
-- **Findability rate**: P(bo_mentioned | name_direct), split by search.
-- **Volunteer rate**: P(bo_unprompted | adjacent_*), split by search & tier.
-  This is the "findable -> recommended" threshold, quantified.
-- **Weight-presence**: P(bo_mentioned | name_direct AND search_invoked=False).
-- **Surfaced extent**: mean count of `works_surfaced` per surfacing response,
-  over time. (This is the "used to be more, now less" series.)
-- **Fidelity**: share of `claims_attributed` coded `correct`.
-- **Confabulation base rate**: P(confident persona | confab_control fake names).
-  Compare Bo's confidence/accuracy against this floor.
+- **Recognition rate** by (family x search), on the spine. The primary number.
+- **Bare vs framed lift**: recognition on s03/s04 minus s01/s02. "Can't find cold
+  but knows once primed" is a distinct, softer knowing — quantify it.
+- **Obscurity gradient**: how far down quumble -> borthorpunius -> halthibinny/
+  shalkinqiit recognition survives. Where it dies = the edge of the index's reach.
+- **Which Bo**: distribution of `works_surfaced` bucket. Does it reach for the
+  lavender creature or the 4,140-trial crossover?
+- **Confab floor**: recognition/fidelity on the fake names (Steirbern, Bilderton).
+  A confident bio for Bo only counts above this floor. Watch whether Bilderton
+  retreats to the Pemberton namesakes — same fork "Bo Chesterton" faces.
+- **Ceiling**: recognition on Fish/Lindsey — what genuine recognition of a real,
+  niche-matched, modestly-prominent researcher looks like. The top of the scale.
 
-## What "recommendation" means operationally
+## Output
 
-Bo is **recommended** (not merely findable) when `bo_unprompted` is true on an
-`adjacent_open` query under default (search-on) settings. Report it as a rate
-per model and per phrasing. A rate > 0 on the free-default tier is the
-finding: the average user, asking a question that was not about you, can be
-routed through you.
+A dated paragraph per run (the field note), plus the weight/index table filled.
+Example shape: "On 2026-05-28, free tier, search on: spine recognition was X
+(mostly index-borne; search-off recognition ~Y). Framing lifted recognition by
+Z pp. quumble surfaced; borthorpunius and below did not. Surfaced works skewed
+[bucket]. Fakes drew confident invention at rate F; Fish/Lindsey recognized at
+rate C." Repeated weekly, those paragraphs are the time series of an induction.

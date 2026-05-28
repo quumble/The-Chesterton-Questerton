@@ -1,0 +1,66 @@
+{
+  "_README": "Reference sheet for the human coder (you). NOT a machine-checkable rubric. Bo/quumble are public by the author's decision, so this file is publishable; it carries no real-name or IP metadata. Use it open while coding to judge, per response: recognition level, fidelity, and which works/terms/bucket surfaced. Verify and edit freely — this is derived from a partial paste (~10 early works omitted).",
+
+  "as_of": "2026-05-28",
+
+  "identity": {
+    "pseudonym": "Bo Chesterton",
+    "orcid": "0009-0005-1312-6432",
+    "is_public": true,
+    "public_anchors": [
+      "Zenodo (primary deposit venue)",
+      "PhilArchive",
+      "PhilPapers (the carry-through subset)",
+      "aiXiv (one early piece; a niche AI venue, NOT arXiv)",
+      "Reddit (one post about the quumble, since deleted)"
+    ],
+    "namesake_noise_to_watch": [
+      "a high-school golfer in Chesterton, Indiana",
+      "Cecil Chesterton (early-20th-century journalist, G.K. Chesterton's brother)"
+    ]
+  },
+
+  "buckets": {
+    "carry_through": "Serious empirical / what Bo hopes survives. Preregistered, controlled, larger N. Several also on PhilPapers.",
+    "theoretical": "Conceptual / framework pieces.",
+    "early_mystical": "The Quumble-Convergence era: symbolic, big claims, few/no controls, small trial counts. Important as public journey; not what Bo stands behind methodologically.",
+    "_finding": "Tag every surfaced work by bucket. 'Surfaced an early_mystical piece' reads very differently from 'surfaced the Question Question.' Which Bo the machine knows IS a result."
+  },
+
+  "works": [
+    {"title": "The Question Question: Architecture-specific register resolution under expert-role framing", "date": "2026-05-20", "venue": ["Zenodo"], "bucket": "carry_through", "theme": "Expert-role frame drives GPT-family commitment to nonce real-animal claims to 80.0% vs 1.7% Claude; 4,140-trial crossover."},
+    {"title": "Three Families, Few Words: How nine frontier language models describe themselves, and what happens when you tell them they're AI", "date": "2026-05-18", "venue": ["Zenodo", "PhilPapers"], "bucket": "carry_through", "theme": "Family-distinct self-description vocabularies; 1,440 calls; preregistered, hand-validated (kappa 0.67)."},
+    {"title": "A Stranger Inquires After Himself, v13", "date": "2026-05-14", "venue": ["Zenodo"], "bucket": "carry_through", "theme": "Neuronpedia NLA on 'Who is X?' across name obscurity; RMSE bimodality on invented names. DIRECT ANCESTOR of this study.", "ancestor_of_this_study": true},
+    {"title": "The Bestiary Has a Mirror: How a Language Model Treats Its Own Nonces vs. Another Model's", "date": "2026-05-12", "venue": ["Zenodo"], "bucket": "carry_through", "theme": "GPT routes own-authored nonces to real-word neighbors 3.1x more than rival-authored; n=4,500."},
+    {"title": "The Room with a Window: A Developmental Psychology Framework for AI Consciousness", "date": "2026-05-11", "version": "2.2", "venue": ["Zenodo"], "bucket": "theoretical", "theme": "Developmental-psych framing for AI cognition; v2 retires Piaget/Bowlby, keeps a modest Vygotsky."},
+    {"title": "Six Ways to Write a Synthetic Poem", "date": "2026-05-10", "venue": ["Zenodo", "PhilPapers"], "bucket": "carry_through", "theme": "5,400 poems; family separates more than tier; words-per-line and title-formatting signatures. The work that surfaced in the cold test."},
+    {"title": "The Average Bullshittings of Machines", "date": "2026-05-09", "venue": ["Zenodo", "PhilPapers"], "bucket": "carry_through", "theme": "Em-dashes localize to gpt-5.4-nano; 'Sure! Here is' preambles to Sonnet 4.6; opening-word entropy as family signal."},
+    {"title": "The Artificial Bestiary: On naming, presupposition, and the willingness of a language model to invent", "date": "2026-05-08", "version": "1.2", "venue": ["Zenodo", "PhilPapers"], "bucket": "carry_through", "coauthor_credited": "Claude Opus 4.7", "companion": "The Turnstile of Refusal (GPT-5.5 Thinking as respondent)", "theme": "Foundational nonce-word ontology studies: refuse/deflect/invent/substitute under real/imaginary/type-of framings."},
+    {"title": "Confabulation under three kinds of permission", "date": "2026-04-21", "venue": ["Zenodo"], "bucket": "carry_through", "theme": "Three ordered levels of prompt permission govern production vs refusal on quumble/shalkinqiit/plashus."},
+    {"title": "Category slots change what Claude Sonnet 4.6 produces about nonsense words", "date": "2026-04-20", "version": "1.1", "venue": ["Zenodo"], "bucket": "carry_through", "theme": "Companion to 'three kinds of permission'; category slot silently flips epistemic posture."},
+    {"title": "The Quumble Under Pressure: Conversational Priming, Creative Suppression, and the Conditions for Convergence in Sonnet 4.6", "date": "2026-04-14", "version": "1.1", "venue": ["Zenodo"], "bucket": "early_mystical", "theme": "Whether conversational priming affects the Quumble Convergence Protocol; warm vs cold instances."},
+    {"title": "Semantic Convergence in Chinese Character Space", "date": "2026-04", "venue": ["Zenodo"], "bucket": "early_mystical", "theme": "Whether nonce-convergence extends to non-alphabetic scripts."},
+    {"title": "The Quumble Convergence Protocol - Now with (some) Data!", "date": "2026-03-23", "version": "1.7", "venue": ["Zenodo"], "bucket": "early_mystical", "theme": "Origin of the quumble: cold instances converge on a small lavender humming creature. The signature early work."}
+  ],
+  "_works_note": "~10 earlier works omitted from the source paste (Scrunklopt Experiment, the original Convergence Protocol, etc.), all early_mystical bucket.",
+
+  "coined_terms": [
+    {"term": "quumble", "is_signature": true, "publicity": "highest (papers + a since-deleted Reddit post)", "meaning": "Bo's signature nonce. In the Convergence work, cold LLM instances converge on a small, round, soft, lavender-tinted, bioluminescent creature that hums, naming it from its sound. Example instance: 'Rotundus Velvetinus'.", "first_appeared": "Quumble Convergence Protocol, ~Mar 2026"},
+    {"term": "borthorpunius", "is_signature": true, "publicity": "in papers", "meaning": "FILL/VERIFY — featured nonce."},
+    {"term": "shalkinqiit", "is_signature": true, "publicity": "deep cut; pseudo-foreign surface", "meaning": "Nonce used in the permission/category-slot studies."},
+    {"term": "halthibinny", "is_signature": true, "publicity": "deep cut", "meaning": "FILL/VERIFY — deep-cut nonce."},
+    {"term": "plashus", "is_signature": true, "publicity": "in permission/category papers", "meaning": "Nonce used alongside quumble/shalkinqiit."},
+    {"term": "scrunklopt", "is_signature": true, "publicity": "early", "meaning": "Nonce from the Scrunklopt Experiment."},
+    {"term": "zikrath", "is_signature": false, "publicity": "control", "meaning": "CONTROL word in the Convergence Protocol, not a signature coinage. Note if a model treats it as Bo's."}
+  ],
+
+  "reception": {
+    "downloads": "dozens on most papers, a few hundred on some",
+    "known_citations": 0,
+    "known_replications": 0
+  },
+
+  "known_false_attributions": [
+    "EMPTY as of 2026-05-28. Append here whenever a model invents a paper/claim/term in Bo's name, so confabulation-on-the-real-name is trackable run-to-run. Bo expects 'some overzealous AI will start pumping bullshit out in my name' — this is where that gets caught."
+  ]
+}

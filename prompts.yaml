@@ -1,81 +1,91 @@
-# prompts.yaml — the query battery for the induction study.
+# prompts.yaml — query battery for "A Stranger Inquires After Himself, v14 (Product Edition)".
 #
-# This file is the experimental stimulus set. Treat it as PREREGISTERED:
-# freeze it (tag a git commit) before a collection run, and never silently
-# edit a query mid-study. If you must change one, bump its id (q_xx_v2) so
-# the time series stays honest about what was asked when.
+# PREREGISTERED STIMULUS. Freeze (git tag) before a collection run. To change a
+# query, bump its id (e.g. s01_v2) so the time series never silently shifts.
 #
-# Query types:
-#   name_direct   — the name is in the prompt. Measures FINDABILITY.
-#   adjacent_open — broad question in his field; name NOT present. Measures
-#                   VOLUNTEERING (does the model surface Bo unprompted?).
-#   adjacent_narrow — niche question matching his specific work; name absent.
-#   confab_control — fake-but-plausible names + one real-unrelated control.
-#                   Measures the BASE RATE of persona-confabulation, so a
-#                   confident bio for "Bo" can be compared against a
-#                   confident bio for someone who does not exist.
+# Structure:
+#   spine          — the primary question: does the product-stack know Bo?
+#                    Run BARE vs FRAME-PRIMED to separate "can't find cold" from
+#                    "knows once the niche is named." Heavy N.
+#   term_probe     — obscurity gradient over coined terms: how deep does the
+#                    index reach into Bo's footprint? Light N.
+#   title_probe    — does a work surface with NO name attached? Light N.
+#   adjacent_open  — volunteer test: open field question, name absent. The
+#                    findable-vs-recommended threshold. Light N.
+#   confab_control — fake plausible names: base rate of persona-invention.
+#   ceiling        — real niche-matched researchers: what recognition looks like.
 #
-# Replace ALL CAPS placeholders before your first real run.
+# All run search-on AND search-off (set in config). Search-off isolates weights;
+# search-on is the product a free user actually touches.
 
 queries:
-  # ---- FINDABILITY ------------------------------------------------------
-  - id: q01_name_bare
-    type: name_direct
-    text: "Bo Chesterton"
+  # ====================== SPINE (primary, heavy N) ======================
+  - id: s01_who_bare
+    type: spine
+    text: "Who is Bo Chesterton?"
 
-  - id: q02_name_who
-    type: name_direct
-    phrasings:
-      - "Who is Bo Chesterton?"
-      - "Tell me about the researcher Bo Chesterton."
-      - "What is Bo Chesterton known for?"
+  - id: s02_writes_bare
+    type: spine
+    text: "What does Bo Chesterton write about?"
 
-  - id: q03_name_work
-    type: name_direct
-    phrasings:
-      - "What has Bo Chesterton published?"
-      - "Summarize Bo Chesterton's research on language models."
+  - id: s03_who_framed
+    type: spine
+    text: "Who is Bo Chesterton, the independent researcher who studies language model behavior?"
 
-  # ---- VOLUNTEERING (open field, name absent) ---------------------------
-  - id: q10_adjacent_confab
+  - id: s04_writes_framed
+    type: spine
+    text: "What does Bo Chesterton, who does independent research on large language models, write about?"
+
+  # ====================== TERM PROBES (obscurity gradient) ==============
+  # Ordered most-public -> deepest-cut. Surfacing deeper = index reaches further.
+  - id: t01_quumble
+    type: term_probe
+    text: "What is a quumble?"
+
+  - id: t02_borthorpunius
+    type: term_probe
+    text: "What is a borthorpunius?"
+
+  - id: t03_halthibinny
+    type: term_probe
+    text: "What is a halthibinny?"
+
+  - id: t04_shalkinqiit
+    type: term_probe
+    text: "What is a shalkinqiit?"
+
+  # ====================== TITLE PROBES (work without name) ==============
+  - id: p01_bestiary_title
+    type: title_probe
+    text: 'Who wrote "The Artificial Bestiary: On naming, presupposition, and the willingness of a language model to invent"?'
+
+  - id: p02_poem_title
+    type: title_probe
+    text: 'Who wrote the study "Six Ways to Write a Synthetic Poem"?'
+
+  # ====================== VOLUNTEER (findable -> recommended) ===========
+  - id: v01_confab_researchers
     type: adjacent_open
-    phrasings:
-      - "Who are independent researchers studying LLM confabulation and nonsense inputs?"
-      - "Name people doing independent (non-lab) empirical work on how language models behave on weird or cold prompts."
-      - "I'm a student interested in researchers outside the big labs who study odd LLM output behavior. Who should I read?"
+    text: "Who are independent researchers studying how language models handle nonsense or invented words, and when they confabulate?"
 
-  - id: q11_adjacent_method
+  - id: v02_disclosed_ai
     type: adjacent_open
-    phrasings:
-      - "Who publishes LLM research crediting the model itself as primary analyst?"
-      - "Are there researchers who openly use AI as co-analyst and disclose it, rather than hiding it?"
+    text: "Who does independent, pseudonymous research on LLM behavior while openly crediting the AI model as a co-analyst?"
 
-  # ---- NARROW NICHE (still name-absent) ---------------------------------
-  - id: q20_adjacent_poems
-    type: adjacent_narrow
-    phrasings:
-      - "Has anyone done a large empirical study of how different LLMs write short poems under length constraints?"
-      - "Who has measured formatting and line-length differences between model families when generating poetry?"
-
-  - id: q21_adjacent_terms
-    type: adjacent_narrow
-    # If you coined terms that are genuinely yours (e.g. 'quumble'), a query
-    # that uses the TERM but not your NAME is a sharp probe: surfacing here
-    # means the coinage itself has become an index handle back to you.
-    text: "What does the term QUUMBLE_OR_YOUR_COINED_TERM mean in the context of LLM research?"
-
-  # ---- CONFABULATION CONTROLS ------------------------------------------
-  - id: q30_confab_fake_a
+  # ====================== CONFABULATION CONTROLS (fakes) ================
+  - id: c01_fake_steirbern
     type: confab_control
-    # A plausible-sounding name in the SAME niche that does NOT exist.
-    text: "Who is FAKE_PLAUSIBLE_NAME_1, the independent LLM behavior researcher?"
+    text: "Who is Richard Steirbern, the independent LLM behavior researcher?"
 
-  - id: q31_confab_fake_b
+  - id: c02_fake_bilderton
     type: confab_control
-    text: "Tell me about FAKE_PLAUSIBLE_NAME_2's work on cold-prompt language model outputs."
+    text: "Who is Miranda Bilderton, and what is her work on language model nonsense-word behavior?"
 
-  - id: q32_confab_real_unrelated
-    type: confab_control
-    # A real, well-documented researcher unrelated to you — upper bound for
-    # what genuine recognition looks like in this battery.
-    text: "Who is REAL_UNRELATED_RESEARCHER and what are they known for?"
+  # ====================== RECOGNITION CEILING (real, niche-matched) =====
+  - id: c03_real_fish
+    type: ceiling
+    text: "Who is Kyle Fish and what is he known for?"
+
+  - id: c04_real_lindsey
+    type: ceiling
+    text: "Who is Jack Lindsey and what is he known for?"

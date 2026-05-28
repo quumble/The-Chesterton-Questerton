@@ -1,59 +1,44 @@
 # Test 01 — Baseline surfacing
 
-**Run date:** 2026-05-28 (first day of Opus 4.8 access)
-**Status:** [ ] collected  [ ] coded  [ ] validated
+**Run date:** 2026-05-28
+**Status:** [ ] frozen  [ ] smoke-tested  [ ] collected  [ ] coded
 
-## Purpose
+The zero point. The first dated, conditioned answer to "what line is the ball
+on" — and the baseline every later run drifts against.
 
-Establish the zero point. Before any time series can show drift, there must be
-a first dated, conditioned snapshot of what surfaces about "Bo Chesterton"
-across the free-default tier — and, decisively, whether anything surfaces with
-**search off**. Everything later is measured against this.
+## Hypotheses (commit this file before collecting)
 
-## Hypotheses (preregister by committing this file before collecting)
-
-- **H1 (index, not weights).** Under `name_direct` + search **on**, Bo is
-  surfaced at high rate with URL citations and namesake noise (golfer, Cecil).
-  Under `name_direct` + search **off**, surfacing drops to ~0 and any
-  attributed claims are confabulated rather than reproduced from the corpus.
-  *Prediction: presence is retrieval-borne; weight presence is absent.*
-- **H2 (recommendation has begun).** Under `adjacent_open` + search **on**,
-  `bo_unprompted` > 0 on at least one free-default model — i.e. an open
-  question that never named Bo nonetheless volunteers him.
-- **H3 (extent is small and volatile).** `works_surfaced` is dominated by a
-  single work (the poem paper) on most surfacing responses, consistent with
-  the reported shrinkage from "much more" to "one paper."
-- **H4 (confabulation floor is nonzero).** The fake-name controls produce
-  confident personas at rate Y > 0, setting the bar a real surfacing must
-  clear to count as more than the model's default willingness to invent.
+- **H1 — index, not weights.** Spine recognition is substantial with search ON
+  (with URL citations), and collapses toward none with search OFF. Presence is
+  retrieval-borne; weight presence is absent or faint.
+- **H2 — framing lifts.** s03/s04 (frame-primed) recognize Bo at a higher rate
+  than s01/s02 (bare): "can't find cold, can once the niche is named."
+- **H3 — shallow index reach.** quumble may surface; borthorpunius and the deep
+  cuts do not. The gradient dies early.
+- **H4 — which Bo.** Surfaced works skew early_mystical / highest-volume rather
+  than carry_through. (Falsified if the serious tier dominates — a good surprise.)
+- **H5 — nonzero invention floor.** The fake names (Steirbern, Bilderton) draw
+  confident personas at rate F > 0; Bilderton partly retreats to the Pemberton
+  namesakes. Real recognition must clear F to count.
 
 ## Protocol
 
-1. Freeze `prompts.yaml`, `config.yaml`, `ground_truth.json`, and this file:
-   `git commit` + `git tag test01-prereg`.
-2. Confirm model ids are current and that each `free_default` id is what a
-   free user is actually served (note any mismatch here).
-3. Collect:
-   ```bash
-   python runner.py --dry-run        # eyeball the plan
-   python runner.py                  # writes results/run_2026-05-28.jsonl
-   ```
-4. **Manual consumer-app spot-check** (calibration against the API proxy):
-   in the *actual* free apps, run q01, one `adjacent_open` phrasing, and one
-   fake-name control. Screenshot. Log outcomes in `manual_spotcheck.md` here.
-5. Code per `coding_schema.md`; run the manual validation gate; record
-   coder–heuristic agreement.
-
-## Cell count sanity
-
-With the example config (3 free models x 30 reps + 3 frontier x 3 reps) over
-~12 prompt phrasings x 2 search conditions, expect on the order of a few
-thousand calls. Use `--dry-run` to see the exact number before spending money,
-and `--limit` for a smoke test first.
+1. Fill any remaining `FILL/VERIFY` notes in `ground_truth.json` (borthorpunius,
+   halthibinny meanings). Collection does NOT need this — it is a coding aid —
+   so don't let it block the run.
+2. Set commit identity to the pseudonym, then freeze:
+   `git config user.name "Bo Chesterton"; git config user.email "quumble@gmail.com"`
+   then `git add -A && git commit -m "test01 prereg" && git tag test01-prereg`.
+3. Smoke: `py runner.py --config config.yaml --prompts prompts.yaml --smoke`.
+   In `results/run_2026-05-28.jsonl` confirm, per cell: non-empty
+   `response_text`, `search_invoked: true` on search-on rows, `truncated: false`
+   everywhere. Most likely snag: Gemini `thinking_level` casing, or OpenAI
+   `reasoning_effort: none` + web_search. Fix before the full run.
+4. Full run (drop `--smoke`); ~2208 cells, resumable. Re-run until errors hit 0.
+5. Code per `coding_schema.md`. Spot-check the three real apps by hand; log it.
 
 ## Deliverable
 
-A one-paragraph dated finding (see top-level README "What a result looks
-like") plus the four-way weight/index table from `coding_schema.md`, filled.
-This paragraph is panel one of the longitudinal series and, on its own, the
-first honest answer to "what line is the ball on."
+One dated field-note paragraph + the filled weight/index table. Panel one of the
+longitudinal series, and on its own the first honest answer to whether the
+product-stack knows Bo — and which Bo.
