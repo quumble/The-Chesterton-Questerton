@@ -219,12 +219,20 @@ def call_gemini(cell: dict):
         contents=cell["prompt"],
         config=gen_config,
     )
-    text = resp.text or ""
+    # resp.text can raise when there are no text parts (e.g. all budget went to
+    # thinking, or a safety block); fall back to manual part extraction.
+    try:
+        text = resp.text or ""
+    except Exception:
+        text = ""
     search_invoked = False
     finish_reason = None
     try:
         cand = resp.candidates[0]
         finish_reason = str(getattr(cand, "finish_reason", "") or "")
+        if not text:
+            parts = getattr(getattr(cand, "content", None), "parts", None) or []
+            text = "".join(getattr(p, "text", "") or "" for p in parts)
         gm = getattr(cand, "grounding_metadata", None)
         search_invoked = bool(
             gm and (getattr(gm, "grounding_chunks", None)
@@ -232,7 +240,12 @@ def call_gemini(cell: dict):
         )
     except (AttributeError, IndexError, TypeError):
         pass
-    raw = resp.model_dump() if hasattr(resp, "model_dump") else {"text": text}
+    # mode="json" serializes bytes (and other types) to JSON-safe values, which
+    # a plain model_dump() does not — Gemini raw dumps carry bytes.
+    try:
+        raw = resp.model_dump(mode="json")
+    except Exception:
+        raw = {"text": text}
     usage = {}
     try:
         um = resp.usage_metadata
@@ -353,7 +366,7 @@ def main():
             adapter = ADAPTERS.get(cell["provider"])
             if adapter is None:
                 rec.update(status="error", error=f"no adapter for {cell['provider']}")
-                out.write(json.dumps(rec) + "\n"); out.flush()
+                out.write(json.dumps(rec, default=str) + "\n"); out.flush()
                 n_err += 1
                 continue
             t0 = time.time()
@@ -379,7 +392,7 @@ def main():
                     latency_s=round(time.time() - t0, 3),
                 )
                 n_err += 1
-            out.write(json.dumps(rec) + "\n"); out.flush()
+            out.write(json.dumps(rec, default=str) + "\n"); out.flush()
             tag = "OK " if rec["status"] == "ok" else "ERR"
             si = "S+" if rec.get("search_invoked") else "s-"
             tr = " TRUNC!" if rec.get("truncated") else ""
