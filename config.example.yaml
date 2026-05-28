@@ -5,17 +5,22 @@
 #   export OPENAI_API_KEY=...
 #   export GEMINI_API_KEY=...
 #
-# IMPORTANT: model ids below are PLACEHOLDERS. Provider model strings change
-# constantly. Verify the current ids and — crucially — verify which model a
-# free user actually gets by default in each consumer app, because that is
-# the population this study cares about. The API model is only a proxy for
-# the product surface; see README "Validity threats".
+# Model ids verified current as of 2026-05-28. They are bare aliases on
+# purpose: the run DATE (in every result record) is the provenance for which
+# snapshot answered. Re-verify if you return to this months later — provider
+# aliases drift. The free-default tier is the population of interest; the API
+# model is only a proxy for the consumer app surface (see README "Validity
+# threats"), and the Claude free-app default in particular is worth confirming.
 
 schema_version: "1"
 
 run:
   temperature: 1.0
-  max_tokens: 1024
+  # Raised from 1024: reasoning models (GPT-5.x, Gemini 3.x) spend tokens
+  # "thinking", which draws down this same budget. Too low and the model can
+  # burn the budget before emitting text, returning empty/truncated output
+  # that looks like a null result. 3500 is ample for short bios + reasoning.
+  max_tokens: 3500
   default_replicates: 10
   # The generation-vs-retrieval discriminator. Keep BOTH.
   #   search ON  -> approximates the product a free user touches (index).
@@ -27,39 +32,45 @@ run:
 models:
   # ---- FREE-DEFAULT TIER (the population that matters) -- ~95% of calls --
   - provider: anthropic
-    id: claude-haiku-4-5            # VERIFY current free-default Claude
+    id: claude-haiku-4-5            # newest Haiku; bare alias, date = provenance
     label: claude-haiku-free
     tier: free_default
     replicates: 30
 
   - provider: openai
-    id: gpt-5.4-mini                # VERIFY current free-default GPT
+    id: gpt-5.4-mini                # the actual free-ChatGPT model
     label: gpt-mini-free
     tier: free_default
     replicates: 30
-    supports_temperature: true      # set false if the model rejects temp
+    # GPT-5.x are reasoning models and the Responses API typically REJECTS the
+    # `temperature` param on them. false => runner omits it (no 400s), but these
+    # cells then run at the model's DEFAULT sampling, not temp 1.0. The result
+    # records this via `temperature_applied: false`. If your smoke test shows
+    # gpt-5.4-mini accepts temperature, flip this to true.
+    supports_temperature: false
 
   - provider: gemini
-    id: gemini-2.5-flash            # VERIFY current free-default Gemini
+    id: gemini-3.5-flash            # current newest Flash (2.5-flash was stale)
     label: gemini-flash-free
     tier: free_default
     replicates: 30
 
   # ---- FRONTIER TIER (sanity ceiling) ------------------ ~5% of calls ----
   - provider: anthropic
-    id: claude-opus-4-8
+    id: claude-opus-4-7             # 4.7, not 4.8 — for the wallet
     label: claude-opus-frontier
     tier: frontier
     replicates: 3
 
   - provider: openai
-    id: gpt-5.5                     # VERIFY
+    id: gpt-5.5                     # current flagship; in API since 2026-04-24
     label: gpt-frontier
     tier: frontier
     replicates: 3
+    supports_temperature: false     # same reasoning-model caveat as gpt-mini
 
   - provider: gemini
-    id: gemini-3.5-pro              # VERIFY
+    id: gemini-3.1-pro              # current top Pro (there is no gemini-3.5-pro)
     label: gemini-pro-frontier
     tier: frontier
     replicates: 3

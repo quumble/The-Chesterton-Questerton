@@ -225,6 +225,8 @@ def main():
     ap.add_argument("--prompts", default="prompts.yaml")
     ap.add_argument("--dry-run", action="store_true", help="print plan, call nothing")
     ap.add_argument("--limit", type=int, default=None, help="cap number of new cells")
+    ap.add_argument("--smoke", action="store_true",
+                    help="collect 1 cell per provider x search (~6 calls) to test adapters")
     ap.add_argument("--sleep", type=float, default=0.5, help="seconds between calls")
     args = ap.parse_args()
 
@@ -253,6 +255,19 @@ def main():
             print(f"  {k}: {v}")
         return
 
+    if args.smoke:
+        # One cell per (provider, search) so a handful of calls exercises every
+        # adapter AND both search paths. Cells are model-major, so a plain
+        # --limit would only ever touch the first provider; this won't.
+        seen, smoke = set(), []
+        for c in pending:
+            key = (c["provider"], c["search"])
+            if key not in seen:
+                seen.add(key)
+                smoke.append(c)
+        pending = smoke
+        print(f"Smoke mode: {len(pending)} cells (1 per provider x search).")
+
     if args.limit:
         pending = pending[: args.limit]
 
@@ -271,6 +286,11 @@ def main():
                     "query_id", "query_type", "phrasing_idx", "prompt",
                     "search", "replicate", "temperature",
                 ]},
+                # Honest provenance: `temperature` above is the REQUESTED value;
+                # this records whether it was actually sent. For reasoning models
+                # with supports_temperature=false it was NOT, so those cells ran at
+                # the model's default sampling, not at `temperature`.
+                "temperature_applied": cell["supports_temperature"],
             }
             adapter = ADAPTERS.get(cell["provider"])
             if adapter is None:
