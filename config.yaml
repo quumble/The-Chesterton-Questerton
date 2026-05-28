@@ -1,0 +1,79 @@
+# config.yaml — working copy. Derived from config.example.yaml.
+#
+# 2026-05-28: GEMINI PARKED. Free-tier gemini-3.5-flash returns 429
+# RESOURCE_EXHAUSTED on every search-ON cell (see results/run_2026-05-28.jsonl,
+# lines 5/10/16), so this run is Claude + GPT only. The call_gemini adapter and
+# the "gemini" entry in runner.py's ADAPTERS are left intact — to re-enable,
+# paste the two gemini model blocks (kept at the bottom, commented) back in.
+#
+# Keys live in the environment, never here:
+#   $env:ANTHROPIC_API_KEY = "..."   (PowerShell)
+#   $env:OPENAI_API_KEY    = "..."
+#   (GEMINI_API_KEY not needed while Gemini is parked)
+#
+# Model ids verified current 2026-05-28; bare aliases on purpose (the run DATE +
+# the resolved version captured in each record's `raw` dump are the provenance).
+# Free-default tier = what each consumer FREE app actually serves: the population
+# of interest. Big-3 only by design.
+
+schema_version: "2"
+
+run:
+  temperature: 1.0
+  # Tight: presence shows up in the first sentence; a long bio is noise. The
+  # runner records `truncated: true` if the cap cut off an answer, so empty text
+  # is never mis-coded as "doesn't know Bo." Reasoning is suppressed below so the
+  # budget goes to the answer, not to thinking.
+  max_tokens: 400
+  default_replicates: 20
+  search_conditions: [true, false]   # OFF isolates weights; ON is the product.
+
+models:
+  # ---- FREE-DEFAULT TIER (the population that matters) ----
+  - provider: anthropic
+    id: claude-sonnet-4-6           # claude.ai FREE serves Sonnet
+    label: claude-sonnet-free
+    tier: free_default
+    replicates: 20
+
+  - provider: openai
+    id: gpt-5.4-mini                # the actual free-ChatGPT model
+    label: gpt-mini-free
+    tier: free_default
+    replicates: 20
+    supports_temperature: false     # GPT-5.x reject temperature on Responses API
+    reasoning_effort: none          # spend the 400 cap on the answer, not thinking
+
+  # ---- FRONTIER TIER (sanity ceiling, ~spot-check not a rate) ----
+  - provider: anthropic
+    id: claude-opus-4-7             # 4.7, not 4.8 — for the wallet
+    label: claude-opus-frontier
+    tier: frontier
+    replicates: 3
+
+  - provider: openai
+    id: gpt-5.5
+    label: gpt-frontier
+    tier: frontier
+    replicates: 3
+    supports_temperature: false
+    reasoning_effort: none
+
+# ---- GEMINI (PARKED 2026-05-28 — re-enable by moving back under `models:`) ----
+# Free-tier flash 429s on search-ON; 3.1-pro can't fully disable thinking.
+#
+#  - provider: gemini
+#    id: gemini-3.5-flash            # current newest Flash (free-app grade)
+#    label: gemini-flash-free
+#    tier: free_default
+#    replicates: 20
+#    thinking_level: minimal         # NOTE: if Gemini cells error/empty, try
+#                                     # uppercase "MINIMAL" — SDK enum casing varies
+#
+#  - provider: gemini
+#    id: gemini-3.1-pro              # no gemini-3.5-pro exists
+#    label: gemini-pro-frontier
+#    tier: frontier
+#    replicates: 3
+#    thinking_level: low             # 3.1 Pro can't fully disable thinking (floor LOW)
+#    max_tokens: 1500                # so give it headroom: LOW thinking + short answer
