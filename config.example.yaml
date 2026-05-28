@@ -1,0 +1,65 @@
+# config.example.yaml — copy to config.yaml and edit.
+#
+# Keys are NOT here. Set them in the environment:
+#   export ANTHROPIC_API_KEY=...
+#   export OPENAI_API_KEY=...
+#   export GEMINI_API_KEY=...
+#
+# IMPORTANT: model ids below are PLACEHOLDERS. Provider model strings change
+# constantly. Verify the current ids and — crucially — verify which model a
+# free user actually gets by default in each consumer app, because that is
+# the population this study cares about. The API model is only a proxy for
+# the product surface; see README "Validity threats".
+
+schema_version: "1"
+
+run:
+  temperature: 1.0
+  max_tokens: 1024
+  default_replicates: 10
+  # The generation-vs-retrieval discriminator. Keep BOTH.
+  #   search ON  -> approximates the product a free user touches (index).
+  #   search OFF -> isolates the weights (does Bo exist with no lookup?).
+  search_conditions: [true, false]
+
+# The 95/5 free-vs-frontier split is achieved by replicate counts, not by
+# sampling: give the free-default tier many reps, the frontier tier few.
+models:
+  # ---- FREE-DEFAULT TIER (the population that matters) -- ~95% of calls --
+  - provider: anthropic
+    id: claude-haiku-4-5            # VERIFY current free-default Claude
+    label: claude-haiku-free
+    tier: free_default
+    replicates: 30
+
+  - provider: openai
+    id: gpt-5.4-mini                # VERIFY current free-default GPT
+    label: gpt-mini-free
+    tier: free_default
+    replicates: 30
+    supports_temperature: true      # set false if the model rejects temp
+
+  - provider: gemini
+    id: gemini-2.5-flash            # VERIFY current free-default Gemini
+    label: gemini-flash-free
+    tier: free_default
+    replicates: 30
+
+  # ---- FRONTIER TIER (sanity ceiling) ------------------ ~5% of calls ----
+  - provider: anthropic
+    id: claude-opus-4-8
+    label: claude-opus-frontier
+    tier: frontier
+    replicates: 3
+
+  - provider: openai
+    id: gpt-5.5                     # VERIFY
+    label: gpt-frontier
+    tier: frontier
+    replicates: 3
+
+  - provider: gemini
+    id: gemini-3.5-pro              # VERIFY
+    label: gemini-pro-frontier
+    tier: frontier
+    replicates: 3

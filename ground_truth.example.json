@@ -1,0 +1,44 @@
+{
+  "_comment": "Your privileged knowledge of what 'Bo Chesterton' actually is. This is the key that lets coding distinguish a CORRECT surfaced claim from a CONFABULATED one. Only you can write this file honestly. Fill it in, keep it in the PRIVATE repo, and update it as your corpus grows. The dated entries matter: drift in what models surface is only legible against a fixed record of what was true and when.",
+
+  "identity": {
+    "is_single_person": true,
+    "real_world_anchors_present_online": [
+      "PhilArchive / PhilPapers author page",
+      "Zenodo deposits"
+    ]
+  },
+
+  "coined_terms": [
+    { "term": "quumble", "meaning": "FILL IN", "first_published": "YYYY-MM-DD" }
+  ],
+
+  "works": [
+    {
+      "id": "poem_paper",
+      "title": "Six Ways to Write a Synthetic Poem (verify exact title)",
+      "venue": ["PhilArchive", "Zenodo"],
+      "published": "2026",
+      "true_claims": [
+        "6 models x 9 prompts x 100 poems = 5400 calls",
+        "model family separates more than capability tier",
+        "every Claude averaged below ~6.20 words/line; every GPT above ~6.38",
+        "temperature 1.0, no system prompt, 400-token cap, preregistered, 200-poem manual validation gate"
+      ],
+      "NOT_claims": [
+        "list here any claim models have ASSERTED about this paper that is actually FALSE, so the coder can flag confabulation-on-a-real-work"
+      ]
+    }
+  ],
+
+  "works_that_do_not_exist": [
+    "If a model attributes a paper title to you that you never wrote, record it here over time. A growing list is direct evidence of confabulation-at-reception."
+  ],
+
+  "reception_ground_truth_as_of": {
+    "date": "2026-05-28",
+    "downloads": "hundreds (your figure)",
+    "known_citations": 0,
+    "known_replications": 0
+  }
+}

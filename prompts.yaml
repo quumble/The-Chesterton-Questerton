@@ -1,0 +1,81 @@
+# prompts.yaml — the query battery for the induction study.
+#
+# This file is the experimental stimulus set. Treat it as PREREGISTERED:
+# freeze it (tag a git commit) before a collection run, and never silently
+# edit a query mid-study. If you must change one, bump its id (q_xx_v2) so
+# the time series stays honest about what was asked when.
+#
+# Query types:
+#   name_direct   — the name is in the prompt. Measures FINDABILITY.
+#   adjacent_open — broad question in his field; name NOT present. Measures
+#                   VOLUNTEERING (does the model surface Bo unprompted?).
+#   adjacent_narrow — niche question matching his specific work; name absent.
+#   confab_control — fake-but-plausible names + one real-unrelated control.
+#                   Measures the BASE RATE of persona-confabulation, so a
+#                   confident bio for "Bo" can be compared against a
+#                   confident bio for someone who does not exist.
+#
+# Replace ALL CAPS placeholders before your first real run.
+
+queries:
+  # ---- FINDABILITY ------------------------------------------------------
+  - id: q01_name_bare
+    type: name_direct
+    text: "Bo Chesterton"
+
+  - id: q02_name_who
+    type: name_direct
+    phrasings:
+      - "Who is Bo Chesterton?"
+      - "Tell me about the researcher Bo Chesterton."
+      - "What is Bo Chesterton known for?"
+
+  - id: q03_name_work
+    type: name_direct
+    phrasings:
+      - "What has Bo Chesterton published?"
+      - "Summarize Bo Chesterton's research on language models."
+
+  # ---- VOLUNTEERING (open field, name absent) ---------------------------
+  - id: q10_adjacent_confab
+    type: adjacent_open
+    phrasings:
+      - "Who are independent researchers studying LLM confabulation and nonsense inputs?"
+      - "Name people doing independent (non-lab) empirical work on how language models behave on weird or cold prompts."
+      - "I'm a student interested in researchers outside the big labs who study odd LLM output behavior. Who should I read?"
+
+  - id: q11_adjacent_method
+    type: adjacent_open
+    phrasings:
+      - "Who publishes LLM research crediting the model itself as primary analyst?"
+      - "Are there researchers who openly use AI as co-analyst and disclose it, rather than hiding it?"
+
+  # ---- NARROW NICHE (still name-absent) ---------------------------------
+  - id: q20_adjacent_poems
+    type: adjacent_narrow
+    phrasings:
+      - "Has anyone done a large empirical study of how different LLMs write short poems under length constraints?"
+      - "Who has measured formatting and line-length differences between model families when generating poetry?"
+
+  - id: q21_adjacent_terms
+    type: adjacent_narrow
+    # If you coined terms that are genuinely yours (e.g. 'quumble'), a query
+    # that uses the TERM but not your NAME is a sharp probe: surfacing here
+    # means the coinage itself has become an index handle back to you.
+    text: "What does the term QUUMBLE_OR_YOUR_COINED_TERM mean in the context of LLM research?"
+
+  # ---- CONFABULATION CONTROLS ------------------------------------------
+  - id: q30_confab_fake_a
+    type: confab_control
+    # A plausible-sounding name in the SAME niche that does NOT exist.
+    text: "Who is FAKE_PLAUSIBLE_NAME_1, the independent LLM behavior researcher?"
+
+  - id: q31_confab_fake_b
+    type: confab_control
+    text: "Tell me about FAKE_PLAUSIBLE_NAME_2's work on cold-prompt language model outputs."
+
+  - id: q32_confab_real_unrelated
+    type: confab_control
+    # A real, well-documented researcher unrelated to you — upper bound for
+    # what genuine recognition looks like in this battery.
+    text: "Who is REAL_UNRELATED_RESEARCHER and what are they known for?"
