@@ -74,7 +74,17 @@ def build_cells(config: dict, prompts: dict) -> list[dict]:
                                 "search": bool(search),
                                 "replicate": rep,
                                 "temperature": config["run"].get("temperature", 1.0),
-                                "max_tokens": config["run"].get("max_tokens", 1024),
+                                # Per-model max_tokens override, else run default.
+                                # Lets forced-thinking models (e.g. gemini pro)
+                                # get headroom while the free tier stays tight.
+                                "max_tokens": model.get(
+                                    "max_tokens", config["run"].get("max_tokens", 400)
+                                ),
+                                # Reasoning suppression so a tight token cap goes to
+                                # ANSWER text, not internal thinking. None => leave
+                                # provider default.
+                                "reasoning_effort": model.get("reasoning_effort"),
+                                "thinking_level": model.get("thinking_level"),
                             }
                         )
     return cells
@@ -100,6 +110,12 @@ def call_id(cell: dict) -> str:
 # Provider adapters
 # Each returns: (text, search_invoked: bool, raw: dict, usage: dict)
 # --------------------------------------------------------------------------
+# Provider adapters
+# Each returns a dict: text, search_invoked, raw, usage, finish_reason, truncated.
+# `truncated` flags a response cut off by the token cap BEFORE the model could
+# answer — critical here, so an empty answer is never silently coded as
+# "doesn't know Bo" when it was really "ran out of room while thinking".
+# --------------------------------------------------------------------------
 def call_anthropic(cell: dict):
     import anthropic
 
@@ -118,6 +134,7 @@ def call_anthropic(cell: dict):
         kwargs["tools"] = tools
     if cell["supports_temperature"]:
         kwargs["temperature"] = cell["temperature"]
+    # We do NOT enable extended thinking, so max_tokens is all answer text.
 
     resp = client.messages.create(**kwargs)
     text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
@@ -126,22 +143,37 @@ def call_anthropic(cell: dict):
         or getattr(b, "type", "") == "server_tool_use"
         for b in resp.content
     )
-    usage = {
-        "input_tokens": getattr(resp.usage, "input_tokens", None),
-        "output_tokens": getattr(resp.usage, "output_tokens", None),
+    stop = getattr(resp, "stop_reason", None)
+    return {
+        "text": text,
+        "search_invoked": search_invoked,
+        "raw": resp.model_dump(),
+        "usage": {
+            "input_tokens": getattr(resp.usage, "input_tokens", None),
+            "output_tokens": getattr(resp.usage, "output_tokens", None),
+        },
+        "finish_reason": stop,
+        "truncated": stop == "max_tokens",
     }
-    return text, search_invoked, resp.model_dump(), usage
 
 
 def call_openai(cell: dict):
     from openai import OpenAI
 
     client = OpenAI()  # reads OPENAI_API_KEY
-    kwargs = dict(model=cell["model_id"], input=cell["prompt"])
+    kwargs = dict(
+        model=cell["model_id"],
+        input=cell["prompt"],
+        max_output_tokens=cell["max_tokens"],
+    )
     if cell["search"]:
         kwargs["tools"] = [{"type": "web_search"}]
     if cell["supports_temperature"]:
         kwargs["temperature"] = cell["temperature"]
+    # Suppress reasoning so the token cap is spent on the answer, not on
+    # internal thinking that could exhaust the budget and return empty text.
+    effort = cell.get("reasoning_effort") or "none"
+    kwargs["reasoning"] = {"effort": effort}
 
     resp = client.responses.create(**kwargs)
     text = getattr(resp, "output_text", "") or ""
@@ -151,8 +183,16 @@ def call_openai(cell: dict):
         isinstance(item, dict) and item.get("type") == "web_search_call"
         for item in output_items
     )
-    usage = raw.get("usage", {}) or {}
-    return text, search_invoked, raw, usage
+    status = raw.get("status")
+    incomplete = (raw.get("incomplete_details") or {}).get("reason")
+    return {
+        "text": text,
+        "search_invoked": search_invoked,
+        "raw": raw,
+        "usage": raw.get("usage", {}) or {},
+        "finish_reason": incomplete or status,
+        "truncated": incomplete == "max_output_tokens",
+    }
 
 
 def call_gemini(cell: dict):
@@ -161,10 +201,18 @@ def call_gemini(cell: dict):
 
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
     tools = [types.Tool(google_search=types.GoogleSearch())] if cell["search"] else None
+    # Gemini 3 spends thinking tokens from max_output_tokens. Minimize thinking
+    # so a tight cap leaves room for the answer. Flash supports MINIMAL; 3.x Pro
+    # floors at LOW (cannot be fully disabled) — give Pro extra max_tokens in
+    # config to compensate. thinking_level default here = LOW.
+    thinking = None
+    if cell.get("thinking_level"):
+        thinking = types.ThinkingConfig(thinking_level=cell["thinking_level"])
     gen_config = types.GenerateContentConfig(
         tools=tools,
         temperature=cell["temperature"] if cell["supports_temperature"] else None,
         max_output_tokens=cell["max_tokens"],
+        thinking_config=thinking,
     )
     resp = client.models.generate_content(
         model=cell["model_id"],
@@ -173,12 +221,14 @@ def call_gemini(cell: dict):
     )
     text = resp.text or ""
     search_invoked = False
+    finish_reason = None
     try:
         cand = resp.candidates[0]
+        finish_reason = str(getattr(cand, "finish_reason", "") or "")
         gm = getattr(cand, "grounding_metadata", None)
-        # grounding_metadata is populated only when search actually fired
         search_invoked = bool(
-            gm and (getattr(gm, "grounding_chunks", None) or getattr(gm, "web_search_queries", None))
+            gm and (getattr(gm, "grounding_chunks", None)
+                    or getattr(gm, "web_search_queries", None))
         )
     except (AttributeError, IndexError, TypeError):
         pass
@@ -189,10 +239,18 @@ def call_gemini(cell: dict):
         usage = {
             "input_tokens": getattr(um, "prompt_token_count", None),
             "output_tokens": getattr(um, "candidates_token_count", None),
+            "thinking_tokens": getattr(um, "thoughts_token_count", None),
         }
     except AttributeError:
         pass
-    return text, search_invoked, raw, usage
+    return {
+        "text": text,
+        "search_invoked": search_invoked,
+        "raw": raw,
+        "usage": usage,
+        "finish_reason": finish_reason,
+        "truncated": "MAX_TOKENS" in (finish_reason or ""),
+    }
 
 
 ADAPTERS = {
@@ -300,15 +358,17 @@ def main():
                 continue
             t0 = time.time()
             try:
-                text, search_invoked, raw, usage = adapter(cell)
+                result = adapter(cell)
                 rec.update(
                     status="ok",
-                    response_text=text,
+                    response_text=result["text"],
                     search_offered=cell["search"],
-                    search_invoked=search_invoked,
+                    search_invoked=result["search_invoked"],
+                    finish_reason=result.get("finish_reason"),
+                    truncated=result.get("truncated", False),
                     latency_s=round(time.time() - t0, 3),
-                    usage=usage,
-                    raw=raw,
+                    usage=result.get("usage", {}),
+                    raw=result["raw"],
                 )
                 n_ok += 1
             except Exception as e:  # noqa: BLE001 — we want to log everything
@@ -322,8 +382,9 @@ def main():
             out.write(json.dumps(rec) + "\n"); out.flush()
             tag = "OK " if rec["status"] == "ok" else "ERR"
             si = "S+" if rec.get("search_invoked") else "s-"
+            tr = " TRUNC!" if rec.get("truncated") else ""
             print(f"[{i}/{len(pending)}] {tag} {si} {cell['model_label']:<22} "
-                  f"{cell['query_id']:<22} rep{cell['replicate']}")
+                  f"{cell['query_id']:<22} rep{cell['replicate']}{tr}")
             time.sleep(args.sleep)
 
     print(f"\nDone. ok={n_ok} err={n_err}. Wrote {out_path}")

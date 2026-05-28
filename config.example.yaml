@@ -5,55 +5,57 @@
 #   export OPENAI_API_KEY=...
 #   export GEMINI_API_KEY=...
 #
-# Model ids verified current as of 2026-05-28. They are bare aliases on
-# purpose: the run DATE (in every result record) is the provenance for which
-# snapshot answered. Re-verify if you return to this months later — provider
-# aliases drift. The free-default tier is the population of interest; the API
-# model is only a proxy for the consumer app surface (see README "Validity
-# threats"), and the Claude free-app default in particular is worth confirming.
+# Model ids verified current as of 2026-05-28. Bare aliases on purpose: the run
+# DATE (in every result record) is the provenance for which snapshot answered.
+# Free-default tier = the population of interest; ids chosen to match what each
+# consumer FREE app actually serves, not just the cheapest API model.
 
 schema_version: "1"
 
 run:
   temperature: 1.0
-  # Raised from 1024: reasoning models (GPT-5.x, Gemini 3.x) spend tokens
-  # "thinking", which draws down this same budget. Too low and the model can
-  # burn the budget before emitting text, returning empty/truncated output
-  # that looks like a null result. 3500 is ample for short bios + reasoning.
-  max_tokens: 3500
+  # Tight by design: presence ("do they know Bo?") shows up in the first
+  # sentence; a long bio is noise. CAUTION — reasoning models (GPT-5.x,
+  # Gemini 3.x) spend thinking tokens FROM this same budget, so a tight cap
+  # can yield empty text unless reasoning is suppressed (it is, below). The
+  # runner records `truncated: true` whenever the cap cut off the answer, so an
+  # empty response is never silently coded as "doesn't know Bo".
+  max_tokens: 400
   default_replicates: 10
   # The generation-vs-retrieval discriminator. Keep BOTH.
   #   search ON  -> approximates the product a free user touches (index).
   #   search OFF -> isolates the weights (does Bo exist with no lookup?).
   search_conditions: [true, false]
 
-# The 95/5 free-vs-frontier split is achieved by replicate counts, not by
-# sampling: give the free-default tier many reps, the frontier tier few.
+# The 95/5 free-vs-frontier split is achieved by replicate counts.
 models:
   # ---- FREE-DEFAULT TIER (the population that matters) -- ~95% of calls --
   - provider: anthropic
-    id: claude-haiku-4-5            # newest Haiku; bare alias, date = provenance
-    label: claude-haiku-free
+    id: claude-sonnet-4-6           # claude.ai FREE serves Sonnet (not Haiku)
+    label: claude-sonnet-free
     tier: free_default
     replicates: 30
+    # No extended thinking enabled, so 400 is all answer text. Fine.
 
   - provider: openai
     id: gpt-5.4-mini                # the actual free-ChatGPT model
     label: gpt-mini-free
     tier: free_default
     replicates: 30
-    # GPT-5.x are reasoning models and the Responses API typically REJECTS the
-    # `temperature` param on them. false => runner omits it (no 400s), but these
-    # cells then run at the model's DEFAULT sampling, not temp 1.0. The result
-    # records this via `temperature_applied: false`. If your smoke test shows
-    # gpt-5.4-mini accepts temperature, flip this to true.
+    # GPT-5.x reject `temperature` on the Responses API -> omitted (these cells
+    # run at default sampling, logged via temperature_applied:false).
     supports_temperature: false
+    # Suppress reasoning so the 400 budget is spent on the answer, not thinking.
+    # Flip to "low"/"medium" if you WANT reasoning; "none" keeps text-only.
+    reasoning_effort: none
 
   - provider: gemini
-    id: gemini-3.5-flash            # current newest Flash (2.5-flash was stale)
+    id: gemini-3.5-flash            # current newest Flash (free-app grade)
     label: gemini-flash-free
     tier: free_default
     replicates: 30
+    # Flash supports minimal thinking; keeps the 400 cap for the answer.
+    thinking_level: minimal
 
   # ---- FRONTIER TIER (sanity ceiling) ------------------ ~5% of calls ----
   - provider: anthropic
@@ -67,10 +69,15 @@ models:
     label: gpt-frontier
     tier: frontier
     replicates: 3
-    supports_temperature: false     # same reasoning-model caveat as gpt-mini
+    supports_temperature: false
+    reasoning_effort: none
 
   - provider: gemini
-    id: gemini-3.1-pro              # current top Pro (there is no gemini-3.5-pro)
+    id: gemini-3.1-pro              # current top Pro (no gemini-3.5-pro exists)
     label: gemini-pro-frontier
     tier: frontier
     replicates: 3
+    # 3.1 Pro CANNOT fully disable thinking (floor is LOW), and thinking eats
+    # max_output_tokens. So give it headroom: ~LOW thinking + a short answer.
+    thinking_level: low
+    max_tokens: 1500
