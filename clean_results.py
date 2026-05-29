@@ -108,6 +108,20 @@ def expected_replicates(config_path: Path) -> dict[str, int]:
     return out
 
 
+def _expected_grid(config_path: Path, prompts_path: Path):
+    """Full set of (model_label, query_id, search) cells the run should contain,
+    from config models x prompts queries x search_conditions. Returns [] if the
+    files aren't readable, in which case coverage falls back to observed cells."""
+    if yaml is None or not config_path.exists() or not prompts_path.exists():
+        return []
+    cfg = yaml.safe_load(config_path.read_text())
+    prm = yaml.safe_load(prompts_path.read_text())
+    searches = [bool(s) for s in cfg.get("run", {}).get("search_conditions", [True, False])]
+    labels = [m.get("label", m["id"]) for m in cfg.get("models", [])]
+    qids = [q["id"] for q in prm.get("queries", [])]
+    return [(ml, qid, s) for ml in labels for qid in qids for s in searches]
+
+
 # ----------------------------------------------------------------------------
 # Derived fields
 # ----------------------------------------------------------------------------
@@ -214,6 +228,9 @@ def main():
     ap.add_argument("infile", nargs="?", default="results/run_2026-05-28.jsonl")
     ap.add_argument("--outdir", default=".")
     ap.add_argument("--config", default="config.yaml")
+    ap.add_argument("--prompts", default="prompts.yaml",
+                    help="needed to enumerate the FULL expected grid so cells "
+                         "wiped to zero still show their shortfall")
     ap.add_argument("--dense-gap-s", type=float, default=30.0,
                     help="max seconds between consecutive full-run calls")
     ap.add_argument("--min-full-block", type=int, default=10,
@@ -309,21 +326,43 @@ def main():
             f.write(json.dumps(r, default=str) + "\n")
 
     # ---- coverage_report.csv ----
+    # Enumerate the FULL expected grid from config x prompts x search, so cells
+    # the outage wiped to zero still appear with their full shortfall. (The old
+    # version iterated only observed cells and silently missed empty ones.)
     expected = expected_replicates(Path(args.config))
     counts = defaultdict(int)
     for r in analyzable:
         counts[(r["model_label"], r["query_id"], bool(r["search_offered"]))] += 1
+
+    grid = _expected_grid(Path(args.config), Path(args.prompts))
     cov_path = outdir / "coverage_report.csv"
     topups = 0
-    with cov_path.open("w", newline="") as f:
-        w = csv.writer(f)
-        w.writerow(["model_label", "query_id", "search", "good_reps",
-                    "expected", "topup_needed"])
+    missing_cells = 0
+    if grid:
+        rows = []
+        for (ml, qid, srch) in grid:
+            exp = expected.get(ml, 0)
+            n = counts.get((ml, qid, srch), 0)
+            need = max(exp - n, 0)
+            topups += need
+            if n == 0:
+                missing_cells += 1
+            rows.append((ml, qid, srch, n, exp, need))
+        rows.sort()
+    else:
+        # Fallback: no prompts/config — report observed cells only (old behavior).
+        rows = []
         for (ml, qid, srch), n in sorted(counts.items()):
             exp = expected.get(ml, "")
             need = (exp - n) if isinstance(exp, int) and exp > n else 0
             topups += need if isinstance(need, int) else 0
-            w.writerow([ml, qid, srch, n, exp, need])
+            rows.append((ml, qid, srch, n, exp, need))
+    with cov_path.open("w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["model_label", "query_id", "search", "good_reps",
+                    "expected", "topup_needed"])
+        for row in rows:
+            w.writerow(row)
 
     # ---- summary ----
     print("\n--- summary ---")
@@ -340,8 +379,9 @@ def main():
     for k, v in sorted(by_reason.items()):
         print(f"    {k:<28} {v}")
     if expected:
-        print(f"cells still short of expected reps: {topups} replicate(s) to top up "
-              f"(see coverage_report.csv)")
+        print(f"cells still short of expected reps: {topups} replicate(s) to top up"
+              + (f" ({missing_cells} cell(s) collected ZERO)" if missing_cells else "")
+              + "  — see coverage_report.csv")
     else:
         print("cells short of expected: (pass --config to compute; yaml needed)")
     print(f"\nwrote: {csv_path}, clean_full.json, excluded.jsonl, {cov_path}")
