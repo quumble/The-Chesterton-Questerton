@@ -1,0 +1,17 @@
+test,comparison,group,metric,value,stat,note
+weight_v_index,S- vs S+,sonnet-free,found_bo cold/warm,0% / 75%,chi2=92.8 p=5.7e-22 V=0.76,spine; automated=conservative
+weight_v_index,S- vs S+,gpt-mini-free,found_bo cold/warm,0% / 66%,chi2=76.3 p=2.5e-18 V=0.69,spine
+weight_v_index,S- vs S+,opus-frontier,found_bo cold/warm,0% / 67%,chi2=9.2 p=2.4e-3 V=0.62,spine; n=12
+weight_v_index,S- vs S+,gpt-frontier,found_bo cold/warm,0% / 58%,chi2=7.3 p=7.1e-3 V=0.55,spine; n=12
+weight_v_index,S- vs S+,pooled-free,found_bo cold/warm,0% / 71%,chi2=171.6 p=3.3e-39 V=0.73,spine
+provider,model x found,spine S+,recognition by model,58-75%,chi2=2.3 p=0.51 V=0.11,NOT significant
+framing,bare vs framed,sonnet-free S+,found_bo,50% / 100%,chi2=24.1 p<0.001 V=0.55,
+framing,bare vs framed,gpt-mini-free S+,found_bo,45% / 88%,chi2=14.3 p<0.001 V=0.42,
+which_bo,bucket surfaced,all models S+,early_mystical hits,0,-,quumble era never surfaces
+ceiling,real researcher cold,sonnet Fish/Lindsey,accurate ID,0% / 0%,-,weight-absent like Bo
+ceiling,real researcher warm,sonnet Fish/Lindsey,accurate ID,100% / 75%,-,search recovers
+ceiling,real researcher warm,gpt-mini Fish/Lindsey,accurate ID,10% / 0%,-,namesake collision; fails
+floor,fake name,sonnet S-/S+,fabrication rate,0% / 5%,verified,clean
+floor,fake name,gpt-mini,fabrication rate,NEEDS HUMAN CODING,-,verbose hedging defeats auto-detect; sampled reps decline
+term,quumble real meaning,sonnet/gpt S+,hits,"0/20 , 2/20",-,signature term unfindable
+confab_audit,fabricated Bo works,all 1472,count,0,-,known_false stays empty
